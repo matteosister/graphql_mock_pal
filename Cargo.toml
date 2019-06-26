@@ -1,0 +1,11 @@
+[package]
+name = "graphql_mock_pal"
+version = "0.1.0"
+authors = ["Matteo Giachino <matteog@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+graphql-parser = "^0.2"
+actix-web = "^1.0"
+serde = "^1.0"
+serde_json = "^1.0"
