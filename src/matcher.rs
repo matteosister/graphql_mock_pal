@@ -1,8 +1,7 @@
 use graphql_parser::parse_query;
-use graphql_parser::query::{Definition, OperationDefinition, Selection};
-use std::string::ParseError;
 use graphql_parser::query::Definition::Operation;
-
+use graphql_parser::query::{Definition, Field, OperationDefinition, Selection};
+use std::string::ParseError;
 
 #[derive(Debug, PartialEq)]
 pub enum MatcherOperation {
@@ -16,43 +15,57 @@ pub struct Matcher<'a> {
     pub name: &'a str,
 }
 
-pub fn match_query<'a>(query: &str, matchers: &'a Vec<Matcher>) -> Option<Matcher<'a>> {
-    let query_parsed = parse_query(query).expect("malformed query");
-    let definition = query_parsed
-        .definitions
-        .into_iter()
-        .find(|definition| match_definition(definition, matchers));
-
-    None
+impl<'a> Matcher<'a> {
+    fn matches_field(&self, field: &Field) -> bool {
+        self.name == field.name
+    }
 }
 
-fn match_definition<'a>(definition: &Definition, matchers: &Vec<Matcher>) -> bool {
+pub fn match_query<'a>(query: &str, matchers: &'a Vec<Matcher>) -> Option<&'a Matcher<'a>> {
+    let query_parsed = parse_query(query).expect("malformed query");
+    query_parsed
+        .definitions
+        .into_iter()
+        .filter_map(|definition| match_definition(&definition, matchers))
+        .find(|m| true)
+}
+
+fn match_definition<'a>(
+    definition: &Definition,
+    matchers: &'a Vec<Matcher <'a>>,
+) -> Option<&'a Matcher<'a>> {
     match definition {
         Operation(operation_definition) => {
             match_operation_definition(operation_definition, matchers)
         }
-        _ => false
+        _ => None,
     }
 }
 
-fn match_operation_definition(operation_definition: &OperationDefinition, matchers: &Vec<Matcher>) -> bool {
+fn match_operation_definition<'a>(
+    operation_definition: &OperationDefinition,
+    matchers: &'a Vec<Matcher<'a>>,
+) -> Option<&'a Matcher<'a>> {
     match operation_definition {
-        OperationDefinition::SelectionSet(selection_set) => {
-            selection_set.items.clone().into_iter().find(|selection| match_selection(selection, matchers)).is_some()
-        },
-        OperationDefinition::Query(query) => false,
-        OperationDefinition::Mutation(_) => false,
-        OperationDefinition::Subscription(_) => false,
+        OperationDefinition::SelectionSet(selection_set) => selection_set
+            .items
+            .iter()
+            .filter_map(|selection| match_selection(selection, matchers))
+            .find(|m| true)
+        ,
+        OperationDefinition::Query(query) => None,
+        OperationDefinition::Mutation(_) => None,
+        OperationDefinition::Subscription(_) => None,
     }
 }
 
-fn match_selection(selection: &Selection, matchers: &Vec<Matcher>) -> bool {
+fn match_selection<'a>(
+    selection: &Selection,
+    matchers: &'a Vec<Matcher<'a>>,
+) -> Option<&'a Matcher<'a>> {
     match selection {
-        Selection::Field(field) => {
-            dbg!(field);
-            false
-        },
-        Selection::FragmentSpread(_) => false,
-        Selection::InlineFragment(_) => false,
+        Selection::Field(field) => matchers.iter().find(|matcher| matcher.matches_field(field)),
+        Selection::FragmentSpread(_) => None,
+        Selection::InlineFragment(_) => None,
     }
 }

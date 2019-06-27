@@ -16,11 +16,26 @@ fn test_simple_match_with_one_matcher_on_the_query_name() {
         operation: MatcherOperation::Query,
         name: "query_name",
     };
+
     assert_eq!(
-        Matcher {
+        &Matcher {
             operation: MatcherOperation::Query,
             name: "query_name"
         },
         match_query(query, &vec![matcher]).unwrap()
+    );
+}
+
+#[test]
+fn test_non_matching_with_query_name() {
+    let query = "{query_name {field1 field2}}";
+    let matcher = Matcher {
+        operation: MatcherOperation::Query,
+        name: "another_query_name",
+    };
+
+    assert_eq!(
+        None,
+        match_query(query, &vec![matcher])
     );
 }
