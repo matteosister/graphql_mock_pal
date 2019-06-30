@@ -1,7 +1,6 @@
 use graphql_parser::parse_query;
 use graphql_parser::query::Definition::Operation;
 use graphql_parser::query::{Definition, Field, OperationDefinition, Selection};
-use std::string::ParseError;
 
 #[derive(Debug, PartialEq)]
 pub enum MatcherOperation {
@@ -53,7 +52,7 @@ fn match_operation_definition<'a>(
             .flat_map(|selection| match_selection(selection, matchers))
             .collect()
         ,
-        OperationDefinition::Query(query) => Default::default(),
+        OperationDefinition::Query(_) => Default::default(),
         OperationDefinition::Mutation(_) => Default::default(),
         OperationDefinition::Subscription(_) => Default::default(),
     }
