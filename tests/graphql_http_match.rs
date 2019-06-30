@@ -33,12 +33,9 @@ fn test_non_matching_with_query_name() {
         operation: MatcherOperation::Query,
         name: "another_query_name",
     };
-    let expected:Vec<&Matcher> = vec![];
+    let expected: Vec<&Matcher> = vec![];
 
-    assert_eq!(
-        expected,
-        match_query(query, &vec![matcher])
-    );
+    assert_eq!(expected, match_query(query, &vec![matcher]));
 }
 
 #[test]
@@ -54,14 +51,16 @@ fn test_two_different_queried() {
     };
 
     assert_eq!(
-        vec![&Matcher {
-            operation: MatcherOperation::Query,
-            name: "query_name",
-        }, &Matcher {
-            operation: MatcherOperation::Query,
-            name: "query_2",
-        }],
+        vec![
+            &Matcher {
+                operation: MatcherOperation::Query,
+                name: "query_name",
+            },
+            &Matcher {
+                operation: MatcherOperation::Query,
+                name: "query_2",
+            }
+        ],
         match_query(query, &vec![matcher, matcher2])
     );
 }
-
