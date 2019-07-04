@@ -1,9 +1,9 @@
 use actix_web::{web, App, HttpServer};
 
-pub mod controller;
+pub mod application;
 pub mod matcher;
 
-use crate::controller::query_handler;
+use crate::application::query_handler;
 use actix_web::web::post;
 
 fn main() -> std::io::Result<()> {
