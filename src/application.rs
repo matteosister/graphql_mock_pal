@@ -28,3 +28,18 @@ impl From<GraphqlRequest> for Output {
 pub fn query_handler(graphql_request: Json<GraphqlRequest>) -> Result<Json<Output>> {
     Ok(Json(graphql_request.into_inner().into()))
 }
+
+fn do_handle_query(graphql_request: GraphqlRequest) -> Output {
+    let matchers = get_matchers();
+    let matched = match_query(graphql_request.query.as_str(), &matchers);
+
+    Output("test".to_owned())
+}
+
+fn get_matchers<'a>() -> Vec<Matcher<'a>> {
+    let matcher = Matcher {
+        operation: MatcherOperation::Query,
+        name: "field",
+    };
+    vec![matcher]
+}

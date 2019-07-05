@@ -1,4 +1,3 @@
-use actix_web::web::Json;
 use graphql_mock_pal::application::{GraphqlRequest, Output};
 use serde_json::json;
 
@@ -10,5 +9,5 @@ fn simple_match() {
     };
     let response: Output = request.into();
     dbg!(response);
-    assert_eq!(1, 2);
+    assert_eq!(2, 1);
 }
