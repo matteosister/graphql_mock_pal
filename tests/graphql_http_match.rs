@@ -7,7 +7,5 @@ fn simple_match() {
         query: "{field { a b }}".to_owned(),
         parameters: json!({}),
     };
-    let response: Output = request.into();
-    dbg!(response);
     assert_eq!(2, 1);
 }
