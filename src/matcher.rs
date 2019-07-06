@@ -10,19 +10,27 @@ pub enum MatcherOperation {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Matcher<'a> {
+pub struct Matcher {
     pub operation: MatcherOperation,
-    pub name: &'a str,
+    pub name: String,
     pub output: Value,
 }
 
-impl<'a> Matcher<'a> {
+impl Matcher {
     fn matches_field(&self, field: &Field) -> bool {
         self.name == field.name
     }
+
+    pub fn new(operation: MatcherOperation, name: String, output: Value) -> Self {
+        Self {
+            operation,
+            name,
+            output,
+        }
+    }
 }
 
-pub fn match_query<'a>(query: &str, matchers: &'a [Matcher]) -> Vec<&'a Matcher<'a>> {
+pub fn match_query<'a>(query: &str, matchers: &'a [Matcher]) -> Vec<&'a Matcher> {
     let query_parsed = parse_query(query).expect("malformed query");
     query_parsed
         .definitions
@@ -31,10 +39,7 @@ pub fn match_query<'a>(query: &str, matchers: &'a [Matcher]) -> Vec<&'a Matcher<
         .collect()
 }
 
-fn match_definition<'a>(
-    definition: &Definition,
-    matchers: &'a [Matcher<'a>],
-) -> Vec<&'a Matcher<'a>> {
+fn match_definition<'a>(definition: &Definition, matchers: &'a [Matcher]) -> Vec<&'a Matcher> {
     match definition {
         Operation(operation_definition) => {
             match_operation_definition(operation_definition, matchers)
@@ -45,8 +50,8 @@ fn match_definition<'a>(
 
 fn match_operation_definition<'a>(
     operation_definition: &OperationDefinition,
-    matchers: &'a [Matcher<'a>],
-) -> Vec<&'a Matcher<'a>> {
+    matchers: &'a [Matcher],
+) -> Vec<&'a Matcher> {
     match operation_definition {
         OperationDefinition::SelectionSet(selection_set) => selection_set
             .items
@@ -59,7 +64,7 @@ fn match_operation_definition<'a>(
     }
 }
 
-fn match_selection<'a>(selection: &Selection, matchers: &'a [Matcher<'a>]) -> Vec<&'a Matcher<'a>> {
+fn match_selection<'a>(selection: &Selection, matchers: &'a [Matcher]) -> Vec<&'a Matcher> {
     match selection {
         Selection::Field(field) => matchers
             .iter()
@@ -75,10 +80,10 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    fn default_matcher<'a>() -> Matcher<'a> {
+    fn default_matcher<'a>() -> Matcher {
         Matcher {
             operation: MatcherOperation::Query,
-            name: "query_name",
+            name: "query_name".to_string(),
             output: json!({"a": 1}),
         }
     }
@@ -115,12 +120,12 @@ mod tests {
         let query = "{query_name {field1 field2} query_2 { a b c }}";
         let matcher = Matcher {
             operation: MatcherOperation::Query,
-            name: "query_name",
+            name: "query_name".to_string(),
             output: json!({"a": 1}),
         };
         let matcher2 = Matcher {
             operation: MatcherOperation::Query,
-            name: "query_2",
+            name: "query_2".to_string(),
             output: json!({"b": 2}),
         };
 
@@ -128,12 +133,12 @@ mod tests {
             vec![
                 &Matcher {
                     operation: MatcherOperation::Query,
-                    name: "query_name",
+                    name: "query_name".to_string(),
                     output: json!({"a": 1})
                 },
                 &Matcher {
                     operation: MatcherOperation::Query,
-                    name: "query_2",
+                    name: "query_2".to_string(),
                     output: json!({"b": 2})
                 }
             ],
