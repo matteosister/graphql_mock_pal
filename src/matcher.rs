@@ -1,6 +1,6 @@
 use graphql_parser::parse_query;
 use graphql_parser::query::Definition::Operation;
-use graphql_parser::query::{Definition, Field, OperationDefinition, Selection};
+use graphql_parser::query::{Definition, Document, Field, OperationDefinition, Selection};
 use serde_json::Value;
 
 #[derive(Debug, PartialEq)]
@@ -31,24 +31,37 @@ impl Matcher {
 }
 
 pub fn match_query<'a>(query: &str, matchers: &'a [Matcher]) -> Vec<&'a Matcher> {
-    let query_parsed = parse_query(query).expect("malformed query");
-    query_parsed
+    let document = parse_query(query).expect("malformed query");
+    do_match_query(&Default::default(), document, matchers)
+}
+
+fn do_match_query<'a>(
+    branches: &Vec<&str>,
+    document: Document,
+    matchers: &'a [Matcher],
+) -> Vec<&'a Matcher> {
+    document
         .definitions
         .into_iter()
-        .flat_map(|definition| match_definition(&definition, matchers))
+        .flat_map(|definition| match_definition(branches, &definition, matchers))
         .collect()
 }
 
-fn match_definition<'a>(definition: &Definition, matchers: &'a [Matcher]) -> Vec<&'a Matcher> {
+fn match_definition<'a>(
+    branches: &Vec<&str>,
+    definition: &Definition,
+    matchers: &'a [Matcher],
+) -> Vec<&'a Matcher> {
     match definition {
         Operation(operation_definition) => {
-            match_operation_definition(operation_definition, matchers)
+            match_operation_definition(branches, operation_definition, matchers)
         }
         _ => Default::default(),
     }
 }
 
 fn match_operation_definition<'a>(
+    branches: &Vec<&str>,
     operation_definition: &OperationDefinition,
     matchers: &'a [Matcher],
 ) -> Vec<&'a Matcher> {
@@ -56,7 +69,7 @@ fn match_operation_definition<'a>(
         OperationDefinition::SelectionSet(selection_set) => selection_set
             .items
             .iter()
-            .flat_map(|selection| match_selection(selection, matchers))
+            .flat_map(|selection| match_selection(branches, selection, matchers))
             .collect(),
         OperationDefinition::Query(_) => Default::default(),
         OperationDefinition::Mutation(_) => Default::default(),
@@ -64,15 +77,29 @@ fn match_operation_definition<'a>(
     }
 }
 
-fn match_selection<'a>(selection: &Selection, matchers: &'a [Matcher]) -> Vec<&'a Matcher> {
+fn match_selection<'a>(
+    branches: &Vec<&str>,
+    selection: &Selection,
+    matchers: &'a [Matcher],
+) -> Vec<&'a Matcher> {
     match selection {
-        Selection::Field(field) => matchers
-            .iter()
-            .filter(|matcher| matcher.matches_field(field))
-            .collect(),
+        Selection::Field(field) => {
+            let matched = matchers
+                .iter()
+                .filter(|matcher| matcher.matches_field(field))
+                .collect();
+
+            let selection_set = match_items(branches, &field.selection_set.items, matchers);
+
+            matched
+        }
         Selection::FragmentSpread(_) => Default::default(),
         Selection::InlineFragment(_) => Default::default(),
     }
+}
+
+fn match_items<'a>(branches: &Vec<&str>, selections: &Vec<Selection>, matchers: &'a [Matcher]) -> Vec<&'a Matcher> {
+
 }
 
 #[cfg(test)]
