@@ -12,16 +12,19 @@ pub enum MatcherOperation {
 #[derive(Debug, PartialEq)]
 pub struct Matcher {
     pub operation: MatcherOperation,
-    pub name: String,
+    pub name: Vec<String>,
     pub output: Value,
 }
 
 impl Matcher {
     fn matches_field(&self, field: &Field) -> bool {
-        self.name == field.name
+        self.name
+            .last()
+            .map(|last_name| last_name.eq(&field.name))
+            .unwrap_or(false)
     }
 
-    pub fn new(operation: MatcherOperation, name: String, output: Value) -> Self {
+    pub fn new(operation: MatcherOperation, name: Vec<String>, output: Value) -> Self {
         Self {
             operation,
             name,
@@ -84,13 +87,15 @@ fn match_selection<'a>(
 ) -> Vec<&'a Matcher> {
     match selection {
         Selection::Field(field) => {
-            let matched = matchers
+            let mut matched: Vec<&'a Matcher> = matchers
                 .iter()
                 .filter(|matcher| matcher.matches_field(field))
                 .collect();
+            dbg!(&matched);
 
-            let selection_set = match_items(branches, &field.selection_set.items, matchers);
+            let mut selection_set = match_items(branches, &field.selection_set.items, matchers);
 
+            matched.append(&mut selection_set);
             matched
         }
         Selection::FragmentSpread(_) => Default::default(),
@@ -98,8 +103,15 @@ fn match_selection<'a>(
     }
 }
 
-fn match_items<'a>(branches: &Vec<&str>, selections: &Vec<Selection>, matchers: &'a [Matcher]) -> Vec<&'a Matcher> {
-
+fn match_items<'a>(
+    branches: &Vec<&str>,
+    selections: &Vec<Selection>,
+    matchers: &'a [Matcher],
+) -> Vec<&'a Matcher> {
+    selections
+        .into_iter()
+        .flat_map(|selection| match_selection(branches, selection, matchers))
+        .collect()
 }
 
 #[cfg(test)]
@@ -110,7 +122,15 @@ mod tests {
     fn default_matcher<'a>() -> Matcher {
         Matcher {
             operation: MatcherOperation::Query,
-            name: "query_name".to_string(),
+            name: vec!["query_name".to_string()],
+            output: json!({"a": 1}),
+        }
+    }
+
+    fn subfield_matcher<'a>() -> Matcher {
+        Matcher {
+            operation: MatcherOperation::Query,
+            name: vec!["query_name".to_string(), "subfield".to_string()],
             output: json!({"a": 1}),
         }
     }
@@ -147,12 +167,12 @@ mod tests {
         let query = "{query_name {field1 field2} query_2 { a b c }}";
         let matcher = Matcher {
             operation: MatcherOperation::Query,
-            name: "query_name".to_string(),
+            name: vec!["query_name".to_string()],
             output: json!({"a": 1}),
         };
         let matcher2 = Matcher {
             operation: MatcherOperation::Query,
-            name: "query_2".to_string(),
+            name: vec!["query_2".to_string()],
             output: json!({"b": 2}),
         };
 
@@ -160,12 +180,12 @@ mod tests {
             vec![
                 &Matcher {
                     operation: MatcherOperation::Query,
-                    name: "query_name".to_string(),
+                    name: vec!["query_name".to_string()],
                     output: json!({"a": 1})
                 },
                 &Matcher {
                     operation: MatcherOperation::Query,
-                    name: "query_2".to_string(),
+                    name: vec!["query_2".to_string()],
                     output: json!({"b": 2})
                 }
             ],
@@ -173,4 +193,12 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_nested_match() {
+        let query = "{query_name {subfield {field1 field2}}}";
+        let subfield_matcher1 = subfield_matcher();
+        let subfield_matcher2 = subfield_matcher();
+
+        assert_eq!(vec![&subfield_matcher1], match_query(query, &vec![subfield_matcher2]));
+    }
 }

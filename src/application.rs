@@ -31,11 +31,10 @@ pub fn do_handle_query(graphql_request: GraphqlRequest, matchers: Vec<Matcher>) 
     if matched.is_empty() {
         Output(get_empty_response().to_string())
     } else {
-        dbg!(&matched);
         let result: Value = matched
             .into_iter()
             .fold(json!({"data": {}}), |mut value, matcher| {
-                value["data"][&matcher.name] = matcher.output.clone();
+                value["data"][&matcher.name.last().unwrap()] = matcher.output.clone();
                 value
             });
 
@@ -46,7 +45,7 @@ pub fn do_handle_query(graphql_request: GraphqlRequest, matchers: Vec<Matcher>) 
 fn get_matchers<'a>() -> Vec<Matcher> {
     let matcher = Matcher {
         operation: MatcherOperation::Query,
-        name: "field".to_string(),
+        name: vec!["field".to_string()],
         output: json!({"a": 1}),
     };
     vec![matcher]

@@ -1,0 +1,22 @@
+
+running 5 tests
+test matcher::tests::test_no_match_if_no_matcher_is_specified ... ok
+test matcher::tests::test_non_matching_with_query_name ... ok
+test matcher::tests::test_simple_match_with_one_matcher_on_the_query_name ... ok
+test matcher::tests::test_two_different_queried ... ok
+test matcher::tests::test_nested_match ... FAILED
+
+failures:
+
+---- matcher::tests::test_nested_match stdout ----
+thread 'matcher::tests::test_nested_match' panicked at 'assertion failed: `(left == right)`
+  left: `[Matcher { operation: Query, name: ["query_name", "subfield"], output: Object({"a": Number(1)}) }]`,
+ right: `[]`', src/matcher.rs:197:9
+note: Run with `RUST_BACKTRACE=1` environment variable to display a backtrace.
+
+
+failures:
+    matcher::tests::test_nested_match
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+
