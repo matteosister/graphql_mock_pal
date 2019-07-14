@@ -37,25 +37,28 @@ pub fn do_handle_query(graphql_request: GraphqlRequest, matchers: Vec<Matcher>) 
                 let mut names = matcher.name.clone();
                 names.reverse();
                 let root = names.pop().unwrap();
-                let internal_value =
-                    if names.is_empty() {
-                        matcher.output.clone()
-                    } else {
-                        let res = names
-                            .into_iter()
-                            .fold((json!({}), Some(matcher)), |(int_value, matcher), name| {
-                                let mut new_value = json!({});
-                                let val = match matcher {
-                                    Some(m) => m.output.clone(),
-                                    None => int_value
-                                };
-                                new_value[name] = val;
-                                (new_value, None)
-                            });
-                        res.0
-                    };
+                let internal_value = if names.is_empty() {
+                    matcher.output.clone()
+                } else {
+                    let res = names.into_iter().fold(
+                        (json!({}), Some(matcher)),
+                        |(int_value, matcher), name| {
+                            let mut new_value = json!({});
+                            let val = match matcher {
+                                Some(m) => m.output.clone(),
+                                None => int_value,
+                            };
+                            new_value[name] = val;
+                            (new_value, None)
+                        },
+                    );
+                    res.0
+                };
 
-                value["data"].as_object_mut().unwrap().insert(root, internal_value);
+                value["data"]
+                    .as_object_mut()
+                    .unwrap()
+                    .insert(root, internal_value);
                 value
             });
 

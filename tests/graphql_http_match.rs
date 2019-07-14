@@ -64,17 +64,24 @@ fn deep_nested_match_and_multiple_queries() {
         query: "{query_1 { query_2 { query_3 {a}} }, query_4 {b}}".to_owned(),
         parameters: json!({}),
     };
-    let matchers = vec![Matcher {
-        operation: MatcherOperation::Query,
-        name: vec!["query_1".to_string(), "query_2".to_string(), "query_3".to_string()],
-        output: json!({"a": 1}),
-    }, Matcher {
-        operation: MatcherOperation::Query,
-        name: vec!["query_4".to_string()],
-        output: json!({"b": 1}),
-    }];
+    let matchers = vec![
+        Matcher {
+            operation: MatcherOperation::Query,
+            name: vec![
+                "query_1".to_string(),
+                "query_2".to_string(),
+                "query_3".to_string(),
+            ],
+            output: json!({"a": 1}),
+        },
+        Matcher {
+            operation: MatcherOperation::Query,
+            name: vec!["query_4".to_string()],
+            output: json!({"b": 1}),
+        },
+    ];
     let output = do_handle_query(request, matchers);
-    let expected = json!({"data": {"query_1": {"query_2": {"query_3": {"a": 1}}}, "query_4": {"b": 1}}});
+    let expected =
+        json!({"data": {"query_1": {"query_2": {"query_3": {"a": 1}}}, "query_4": {"b": 1}}});
     assert_eq!(expected.to_string(), output.to_string());
 }
-
