@@ -91,7 +91,6 @@ fn match_selection<'a>(
                 .iter()
                 .filter(|matcher| matcher.matches_field(field))
                 .collect();
-            dbg!(&matched);
 
             let mut selection_set = match_items(branches, &field.selection_set.items, matchers);
 
@@ -199,6 +198,9 @@ mod tests {
         let subfield_matcher1 = subfield_matcher();
         let subfield_matcher2 = subfield_matcher();
 
-        assert_eq!(vec![&subfield_matcher1], match_query(query, &vec![subfield_matcher2]));
+        assert_eq!(
+            vec![&subfield_matcher1],
+            match_query(query, &vec![subfield_matcher2])
+        );
     }
 }

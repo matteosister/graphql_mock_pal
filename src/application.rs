@@ -34,7 +34,21 @@ pub fn do_handle_query(graphql_request: GraphqlRequest, matchers: Vec<Matcher>) 
         let result: Value = matched
             .into_iter()
             .fold(json!({"data": {}}), |mut value, matcher| {
-                value["data"][&matcher.name.last().unwrap()] = matcher.output.clone();
+                let mut names = matcher.name.clone();
+                names.reverse();
+                let internal_value =
+                    names
+                        .into_iter()
+                        .fold((json!({}), Some(matcher)), |(int_value, matcher), name| {
+                            let mut new_value = json!({});
+                            let val = match matcher {
+                                Some(m) => m.output.clone(),
+                                None => int_value
+                            };
+                            new_value[name] = val;
+                            (new_value, None)
+                        });
+                value["data"] = internal_value.0;
                 value
             });
 
