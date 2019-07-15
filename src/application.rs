@@ -1,29 +1,35 @@
 use crate::matcher::{match_query, Matcher, MatcherOperation};
 use actix_web::web::Json;
-use actix_web::Result;
+use actix_web::{Error, HttpRequest, HttpResponse, Responder, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::fmt;
 
 #[derive(Deserialize)]
 pub struct GraphqlRequest {
     pub query: String,
-    pub parameters: Value,
+    pub parameters: Option<Value>,
 }
 
 #[derive(Serialize, Debug)]
 pub struct Output(String);
 
-impl fmt::Display for Output {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+impl Responder for Output {
+    type Error = Error;
+    type Future = Result<HttpResponse, Error>;
+
+    fn respond_to(self, _req: &HttpRequest) -> Self::Future {
+        let body = &self.0;
+
+        // Create response and set content type
+        Ok(HttpResponse::Ok()
+            .content_type("application/json")
+            .body(body))
     }
 }
 
-pub fn query_handler(graphql_request: Json<GraphqlRequest>) -> Result<Json<String>> {
+pub fn query_handler(graphql_request: Json<GraphqlRequest>) -> impl Responder {
     let matchers = get_matchers();
-    let output = do_handle_query(graphql_request.into_inner(), matchers);
-    Ok(Json(output.0))
+    do_handle_query(graphql_request.into_inner(), matchers)
 }
 
 pub fn do_handle_query(graphql_request: GraphqlRequest, matchers: Vec<Matcher>) -> Output {
