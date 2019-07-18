@@ -1,6 +1,7 @@
-use crate::matcher::{match_query, Matcher, MatcherOperation};
+use crate::matcher::{match_query, Matcher};
+use crate::state::AppState;
 use actix_web::web::Json;
-use actix_web::{Error, HttpRequest, HttpResponse, Responder, Result};
+use actix_web::{web, Error, HttpRequest, HttpResponse, Responder, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -27,12 +28,14 @@ impl Responder for Output {
     }
 }
 
-pub fn query_handler(graphql_request: Json<GraphqlRequest>) -> impl Responder {
-    let matchers = get_matchers();
-    do_handle_query(graphql_request.into_inner(), matchers)
+pub fn query_handler(
+    graphql_request: Json<GraphqlRequest>,
+    data: web::Data<AppState>,
+) -> impl Responder {
+    do_handle_query(graphql_request.into_inner(), data.get_matchers())
 }
 
-pub fn do_handle_query(graphql_request: GraphqlRequest, matchers: Vec<Matcher>) -> Output {
+pub fn do_handle_query(graphql_request: GraphqlRequest, matchers: &Vec<Matcher>) -> Output {
     let matched = match_query(graphql_request.query.as_str(), &matchers);
     if matched.is_empty() {
         Output(get_empty_response().to_string())
@@ -70,15 +73,6 @@ pub fn do_handle_query(graphql_request: GraphqlRequest, matchers: Vec<Matcher>) 
 
         Output(result.to_string())
     }
-}
-
-fn get_matchers<'a>() -> Vec<Matcher> {
-    let matcher = Matcher {
-        operation: MatcherOperation::Query,
-        name: vec!["field".to_string()],
-        output: json!({"a": 1}),
-    };
-    vec![matcher]
 }
 
 pub fn get_empty_response() -> Value {

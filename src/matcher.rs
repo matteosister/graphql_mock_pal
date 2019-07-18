@@ -1,15 +1,16 @@
 use graphql_parser::parse_query;
 use graphql_parser::query::Definition::Operation;
 use graphql_parser::query::{Definition, Document, Field, OperationDefinition, Selection};
+use serde::Deserialize;
 use serde_json::Value;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Deserialize)]
 pub enum MatcherOperation {
     Query,
     Mutation,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Deserialize)]
 pub struct Matcher {
     pub operation: MatcherOperation,
     pub name: Vec<String>,
