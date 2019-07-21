@@ -3,7 +3,7 @@
 use graphql_mock_pal::matcher::Matcher;
 //use snafu::ResultExt;
 //use std::path::Path;
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::{Receiver, Sender};
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -12,7 +12,7 @@ pub struct Config {
     matchers: Vec<Matcher>,
 }
 
-pub fn start(tx: Sender<Config>, receiver : Receiver<String>) {
+pub fn start(tx: Sender<Config>, receiver: Receiver<String>) {
     for msg in receiver {
         println!("config received {}", msg);
         let config = get_config();
